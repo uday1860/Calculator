@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JEE Calculator</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --mono: "Ubuntu Mono", "DejaVu Sans Mono", "Liberation Mono", "Fira Mono", ui-monospace, Consolas, monospace;
+      --paper: #0f1115;
+      --ink: #e8eaf0;
+      --mute: #8b93a3;
+      --line: #262b36;
+      --key: #181c24;
+      --fn: #212632;
+      --acc: #8aa6ff;
+      --hi: #3b63e8
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--mono);
+      display: flex;
+      justify-content: center;
+      padding: 16px
+    }
+
+    main {
+      width: 100%;
+      max-width: 460px
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      margin: 4px 0 12px;
+      font-weight: 600
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px
+    }
+
+    .tabs button,
+    .mode {
+      border: 1px solid var(--line);
+      background: var(--key);
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font: inherit;
+      font-size: .85rem
+    }
+
+    .tabs button.on,
+    .mode.on {
+      background: var(--hi);
+      color: #fff;
+      border-color: var(--hi)
+    }
+
+    .mode {
+      margin-left: auto
+    }
+
+    .screen {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      background: var(--key)
+    }
+
+    #expr {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
+      color: var(--ink);
+      font: 1.3rem var(--mono);
+      outline: 0;
+      padding: 4px 0 10px
+    }
+
+    #out {
+      min-height: 3rem;
+      margin-top: 10px;
+      text-align: right;
+      font-size: 2.4rem;
+      font-weight: 600;
+      overflow-x: auto;
+      white-space: nowrap
+    }
+
+    #out.err {
+      font-size: .95rem;
+      color: #d23b3b;
+      font-weight: 400
+    }
+
+    #out.live {
+      color: var(--mute)
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-top: 10px
+    }
+
+    .grid {
+      gap: 8px
+    }
+
+    .grid button {
+      border: 1px solid var(--line);
+      background: var(--key);
+      color: var(--ink);
+      border-radius: 10px;
+      padding: 15px 0;
+      font: inherit;
+      font-size: 1.15rem;
+      cursor: pointer
+    }
+
+    .grid button:hover {
+      background: var(--fn)
+    }
+
+    .grid button:active {
+      transform: scale(.96)
+    }
+
+    .grid button:focus-visible,
+    .tabs button:focus-visible,
+    .mode:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--acc);
+      outline-offset: 2px
+    }
+
+    .grid .f {
+      background: var(--fn);
+      font-size: .95rem
+    }
+
+    .grid .o {
+      color: var(--acc);
+      font-weight: 700;
+      font-size: 1.3rem
+    }
+
+    .grid .eq {
+      background: var(--hi);
+      color: #fff;
+      border-color: var(--hi);
+      font-weight: 700
+    }
+
+    .grid .eq:hover {
+      background: #5578f0
+    }
+
+    .grid .c {
+      color: #d23b3b
+    }
+
+    .panel {
+      display: none
+    }
+
+    .panel.on {
+      display: block
+    }
+
+    .tool {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: var(--key);
+      margin-bottom: 10px
+    }
+
+    .tool h2 {
+      font-size: .95rem;
+      margin: 0 0 8px
+    }
+
+    .tool .row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px
+    }
+
+    .tool input {
+      width: 100%;
+      min-width: 0;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      font: inherit
+    }
+
+    .tool button {
+      padding: 8px 14px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--hi);
+      color: #fff;
+      font: inherit;
+      cursor: pointer
+    }
+
+    .res {
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-size: .9rem;
+      line-height: 1.6;
+      white-space: pre-wrap
+    }
+
+    #hist {
+      list-style: none;
+      margin: 10px 0 0;
+      padding: 0;
+      max-height: 150px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: .85rem
+    }
+
+    #hist li {
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px
+    }
+
+    #hist li span:last-child {
+      color: var(--acc);
+      font-weight: 600
+    }
+
+    small {
+      color: var(--mute);
+      display: block;
+      margin-top: 8px;
+      line-height: 1.5
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>JEE Calculator</h1>
+    <div class="tabs">
+      <button class="on" data-p="calc">Calculator</button>
+      <button data-p="tools">JEE tools</button>
+      <button class="mode on" id="mode" title="Toggle angle mode">DEG</button>
+    </div>
+
+    <section class="panel on" id="calc">
+      <div class="screen">
+        <input id="expr" autocomplete="off" spellcheck="false" placeholder="e.g. nCr(10,3) + log(1000)"
+          aria-label="Expression">
+        <div id="out" aria-live="polite">0</div>
+      </div>
+      <div class="grid" id="keys"></div>
+      <ul id="hist"></ul>
+      <small>Use ^ for powers, ! for factorial, log(x) is base 10, log(x,b) any base. Trig works in the angle mode shown
+        above. Ans reuses the last result.</small>
+    </section>
+
+    <section class="panel" id="tools">
+      <div class="tool">
+        <h2>Quadratic equation ax² + bx + c = 0</h2>
+        <div class="row"><input id="qa" placeholder="a" type="number"><input id="qb" placeholder="b"
+            type="number"><input id="qc" placeholder="c" type="number"></div>
+        <button id="qgo">Solve</button>
+        <div class="res" id="qres"></div>
+      </div>
+      <div class="tool">
+        <h2>Arithmetic progression (AP)</h2>
+        <div class="row"><input id="aa" placeholder="first term a" type="number"><input id="ad"
+            placeholder="difference d" type="number"><input id="an" placeholder="n" type="number"></div>
+        <button id="ago">Find nth term and sum</button>
+        <div class="res" id="ares"></div>
+      </div>
+      <div class="tool">
+        <h2>Geometric progression (GP)</h2>
+        <div class="row"><input id="ga" placeholder="first term a" type="number"><input id="gr" placeholder="ratio r"
+            type="number"><input id="gn" placeholder="n" type="number"></div>
+        <button id="ggo">Find nth term and sum</button>
+        <div class="res" id="gres"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    let deg = true, ans = 0, hist = [];
+    try { hist = JSON.parse(localStorage.getItem('jeeCalcHist') || '[]'); } catch (e) { }
+
+    /* ---------- math helpers ---------- */
+    const fact = n => {
+      if (!Number.isInteger(n) || n < 0) throw Error('Factorial needs an integer ≥ 0');
+      if (n > 170) return Infinity;
+      let r = 1; for (let i = 2; i <= n; i++) r *= i; return r;
+    };
+    const chk = (n, r) => { if (!Number.isInteger(n) || !Number.isInteger(r) || n < 0 || r < 0 || r > n) throw Error('Need integers with 0 ≤ r ≤ n'); };
+    const nPr = (n, r) => { chk(n, r); let x = 1; for (let i = 0; i < r; i++) x *= n - i; return x; };
+    const nCr = (n, r) => { chk(n, r); r = Math.min(r, n - r); let x = 1; for (let i = 1; i <= r; i++) x = x * (n - r + i) / i; return Math.round(x); };
+    const gcd = (a, b) => b ? gcd(b, a % b) : Math.abs(a);
+    const rad = x => deg ? x * Math.PI / 180 : x;
+    const back = x => deg ? x * 180 / Math.PI : x;
+
+    const F = {
+      sin: x => Math.sin(rad(x)), cos: x => Math.cos(rad(x)), tan: x => Math.tan(rad(x)),
+      cosec: x => 1 / Math.sin(rad(x)), sec: x => 1 / Math.cos(rad(x)), cot: x => 1 / Math.tan(rad(x)),
+      asin: x => back(Math.asin(x)), acos: x => back(Math.acos(x)), atan: x => back(Math.atan(x)),
+      sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+      log: (x, b) => b === undefined ? Math.log10(x) : Math.log(x) / Math.log(b),
+      ln: Math.log, exp: Math.exp, sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs,
+      root: (x, n) => (x < 0 && n % 2 ? -Math.pow(-x, 1 / n) : Math.pow(x, 1 / n)),
+      pow: Math.pow, mod: (a, b) => ((a % b) + b) % b,
+      fact, npr: nPr, ncr: nCr,
+      gcd: (a, b) => gcd(a, b), lcm: (a, b) => Math.abs(a * b) / gcd(a, b),
+      floor: Math.floor, ceil: Math.ceil, round: Math.round
+    };
+    const C = { pi: Math.PI, e: Math.E, get ans() { return ans; } };
+
+    /* ---------- tokenizer + recursive-descent parser (no eval) ---------- */
+    function tokenize(s) {
+      s = s.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/π/g, 'pi').replace(/√/g, 'sqrt').replace(/\s+/g, '');
+      const t = []; let m;
+      while (s) {
+        if (m = s.match(/^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/i)) t.push({ n: +m[0] });
+        else if (m = s.match(/^[a-z]+/i)) t.push({ id: m[0].toLowerCase() });
+        else { if (!'+-*/^!%(),'.includes(s[0])) throw Error('Unexpected "' + s[0] + '"'); m = [s[0]]; t.push({ op: s[0] }); }
+        s = s.slice(m[0].length);
+      }
+      return t;
+    }
+
+    function evaluate(src) {
+      const t = tokenize(src); let i = 0;
+      const isOp = o => t[i] && t[i].op === o;
+      const ex = () => { let v = tm(); while (isOp('+') || isOp('-')) { const o = t[i++].op, r = tm(); v = o === '+' ? v + r : v - r; } return v; };
+      const tm = () => {
+        let v = un();
+        for (; ;) {
+          if (isOp('*') || isOp('/')) { const o = t[i++].op, r = un(); v = o === '*' ? v * r : v / r; }
+          else if (t[i] && (t[i].n !== undefined || t[i].id || isOp('('))) v *= un();   // implicit multiplication: 2pi, 3(4+1)
+          else return v;
+        }
+      };
+      const un = () => { if (isOp('-')) { i++; return -un(); } if (isOp('+')) { i++; return un(); } return pw(); };
+      const pw = () => { const b = po(); if (isOp('^')) { i++; return Math.pow(b, un()); } return b; };
+      const po = () => { let v = pr(); while (isOp('!')) { i++; v = fact(v); } if (isOp('%')) { i++; v /= 100; } return v; };
+      const pr = () => {
+        const k = t[i++];
+        if (!k) throw Error('Expression is incomplete');
+        if (k.n !== undefined) return k.n;
+        if (k.op === '(') { const v = ex(); if (!isOp(')')) throw Error('Missing )'); i++; return v; }
+        if (k.id) {
+          if (isOp('(')) {
+            i++; const a = [];
+            if (!isOp(')')) { do { a.push(ex()); } while (isOp(',') && ++i); }
+            if (!isOp(')')) throw Error('Missing )'); i++;
+            const f = F[k.id]; if (!f) throw Error('Unknown function: ' + k.id);
+            return f(...a);
+          }
+          if (k.id in C) return C[k.id];
+          throw Error('Unknown name: ' + k.id);
+        }
+        throw Error('Unexpected "' + k.op + '"');
+      };
+      const v = ex();
+      if (i < t.length) throw Error('Unexpected "' + (t[i].op || t[i].id || t[i].n) + '"');
+      return v;
+    }
+
+    const fmt = v => {
+      if (Number.isNaN(v)) return 'Undefined';
+      if (!isFinite(v)) return v > 0 ? '∞' : '-∞';
+      if (Math.abs(v) < 1e-12) return '0';
+      if (Number.isInteger(v) && Math.abs(v) < 1e15) return String(v);
+      const p = parseFloat(v.toPrecision(12));
+      return (Math.abs(p) >= 1e15 || Math.abs(p) < 1e-6) ? p.toExponential() : String(p);
+    };
+
+    /* ---------- calculator UI ---------- */
+    const expr = $('#expr'), out = $('#out');
+    const keys = [
+      ['sin(', 'f'], ['cos(', 'f'], ['tan(', 'f'], ['asin(', 'f'], ['acos(', 'f'],
+      ['atan(', 'f'], ['log(', 'f'], ['ln(', 'f'], ['exp(', 'f'], ['sqrt(', 'f'],
+      ['nPr(', 'f'], ['nCr(', 'f'], ['!', 'f'], ['^', 'f'], ['abs(', 'f'],
+      ['cbrt(', 'f'], ['gcd(', 'f'], ['lcm(', 'f'], ['π', 'f'], ['e', 'f'],
+      ['7'], ['8'], ['9'], ['÷', 'o'], ['DEL', 'c'],
+      ['4'], ['5'], ['6'], ['×', 'o'], ['AC', 'c'],
+      ['1'], ['2'], ['3'], ['−', 'o'], ['(', 'o'],
+      ['0'], ['.'], [','], ['+', 'o'], [')', 'o'],
+      ['Ans', 'f'], ['%', 'f'], ['', 'f'], ['', 'f'], ['=', 'eq']
+    ];
+    const kb = $('#keys');
+    keys.forEach(([label, cls]) => {
+      if (!label) { kb.appendChild(document.createElement('span')); return; }
+      const b = document.createElement('button');
+      b.textContent = label; b.className = cls || '';
+      b.onclick = () => press(label);
+      kb.appendChild(b);
+    });
+
+    function insert(text) {
+      const s = expr.selectionStart ?? expr.value.length, e = expr.selectionEnd ?? s;
+      expr.value = expr.value.slice(0, s) + text + expr.value.slice(e);
+      expr.focus(); expr.setSelectionRange(s + text.length, s + text.length);
+      preview();
+    }
+    function press(k) {
+      if (k === 'AC') { expr.value = ''; show('0'); expr.focus(); }
+      else if (k === 'DEL') {
+        const s = expr.selectionStart, e = expr.selectionEnd;
+        if (s !== e) expr.setRangeText('', s, e, 'end'); else if (s > 0) expr.setRangeText('', s - 1, s, 'end');
+        expr.focus(); preview();
+      }
+      else if (k === '=') calc();
+      else insert(k === 'Ans' ? 'ans' : k);
+    }
+    function show(text, cls = '') { out.textContent = text; out.className = cls; }
+    function preview() {
+      if (!expr.value.trim()) return show('0');
+      try { show(fmt(evaluate(expr.value)), 'live'); } catch (e) { show('…', 'live'); }
+    }
+    function calc() {
+      if (!expr.value.trim()) return;
+      try {
+        const v = evaluate(expr.value), r = fmt(v);
+        show(r); ans = v;
+        hist.unshift([expr.value, r]); hist = hist.slice(0, 30);
+        try { localStorage.setItem('jeeCalcHist', JSON.stringify(hist)); } catch (e) { }
+        renderHist();
+      } catch (e) { show(e.message, 'err'); }
+    }
+    function renderHist() {
+      const ul = $('#hist'); ul.innerHTML = '';
+      hist.forEach(([q, r]) => {
+        const li = document.createElement('li');
+        li.innerHTML = '<span></span><span></span>';
+        li.children[0].textContent = q; li.children[1].textContent = r;
+        li.onclick = () => { expr.value = q; preview(); expr.focus(); };
+        ul.appendChild(li);
+      });
+    }
+    expr.addEventListener('input', preview);
+    expr.addEventListener('keydown', e => { if (e.key === 'Enter') calc(); });
+    $('#mode').onclick = e => { deg = !deg; e.target.textContent = deg ? 'DEG' : 'RAD'; e.target.classList.toggle('on', deg); preview(); };
+    document.querySelectorAll('.tabs [data-p]').forEach(b => b.onclick = () => {
+      document.querySelectorAll('.tabs [data-p]').forEach(x => x.classList.toggle('on', x === b));
+      document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === b.dataset.p));
+    });
+    renderHist();
+
+    /* ---------- JEE tools ---------- */
+    const num = id => { const v = parseFloat($(id).value); if (Number.isNaN(v)) throw Error('Fill in all fields'); return v; };
+    const run = (btn, res, fn) => $(btn).onclick = () => { try { $(res).textContent = fn(); } catch (e) { $(res).textContent = e.message; } };
+
+    run('#qgo', '#qres', () => {
+      const a = num('#qa'), b = num('#qb'), c = num('#qc');
+      if (a === 0) { if (b === 0) throw Error('Not an equation'); return 'Linear: x = ' + fmt(-c / b); }
+      const D = b * b - 4 * a * c, head = 'Discriminant D = ' + fmt(D) + '\n';
+      const tail = '\nSum of roots = ' + fmt(-b / a) + '\nProduct of roots = ' + fmt(c / a);
+      if (D > 0) return head + 'Real and distinct roots\nx₁ = ' + fmt((-b + Math.sqrt(D)) / (2 * a)) + '\nx₂ = ' + fmt((-b - Math.sqrt(D)) / (2 * a)) + tail;
+      if (D === 0) return head + 'Real and equal roots\nx = ' + fmt(-b / (2 * a)) + tail;
+      const re = fmt(-b / (2 * a)), im = fmt(Math.sqrt(-D) / (2 * a));
+      return head + 'Complex roots\nx = ' + re + ' ± ' + im.replace('-', '') + 'i' + tail;
+    });
+    run('#ago', '#ares', () => {
+      const a = num('#aa'), d = num('#ad'), n = num('#an');
+      return 'nth term = a + (n−1)d = ' + fmt(a + (n - 1) * d) + '\nSum Sₙ = n/2 [2a + (n−1)d] = ' + fmt(n / 2 * (2 * a + (n - 1) * d));
+    });
+    run('#ggo', '#gres', () => {
+      const a = num('#ga'), r = num('#gr'), n = num('#gn');
+      let s = 'nth term = a·rⁿ⁻¹ = ' + fmt(a * Math.pow(r, n - 1)) + '\nSum Sₙ = ' + fmt(r === 1 ? a * n : a * (Math.pow(r, n) - 1) / (r - 1));
+      if (Math.abs(r) < 1) s += '\nSum to infinity = a/(1−r) = ' + fmt(a / (1 - r));
+      return s;
+    });
+  </script>
+</body>
+
+</html>
